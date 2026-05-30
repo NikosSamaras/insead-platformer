@@ -58,7 +58,7 @@
   .card3d{transform-style:preserve-3d}
   .card3d .avatar{overflow:visible;transform-style:preserve-3d;position:relative}
   .card3d .stats{display:none}
-  .card3d.active .avatar img{animation:floaty 2.1s ease-in-out infinite}
+  .card3d.active .avatar img{transform:translateZ(40px) scale(1.12)}
   @keyframes floaty{0%,100%{transform:translateZ(40px) translateY(0) scale(1.12)}50%{transform:translateZ(54px) translateY(-8px) scale(1.15)}}
   .card3d.active .avatar::after{content:"";position:absolute;left:50%;bottom:0;width:62px;height:13px;transform:translateX(-50%);background:radial-gradient(ellipse at center,rgba(0,0,0,.5),rgba(0,0,0,0) 70%);border-radius:50%}
   .card3d.picking{box-shadow:0 0 0 3px #fff,0 0 34px var(--gold)!important}
@@ -75,7 +75,7 @@
   #selectScreen .ring3d{height:170px;margin:0}
   #selectScreen .carousel{margin:2px 0 14px}
   #selectScreen .carInfo{margin-top:2px}
-  .card3d.active .avatar img{animation:floaty2 2.2s ease-in-out infinite!important}
+  .card3d.active .avatar img{animation:none!important;transform:translateZ(24px) scale(1.08)!important}
   @keyframes floaty2{0%,100%{transform:translateZ(24px) translateY(0) scale(1.06)}50%{transform:translateZ(34px) translateY(-5px) scale(1.08)}}
   .card3d.picking .avatar img{animation:charPick2 .62s ease-out!important}
   @keyframes charPick2{0%{transform:translateZ(24px) translateY(0) scale(1.06)}30%{transform:translateZ(48px) translateY(-26px) scale(1.18) rotate(-8deg)}60%{transform:translateZ(48px) translateY(-28px) scale(1.2) rotate(6deg)}82%{transform:translateZ(30px) translateY(0) scaleX(1.15) scaleY(.88)}100%{transform:translateZ(24px) translateY(0) scale(1.1)}}
