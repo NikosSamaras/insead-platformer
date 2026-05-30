@@ -542,6 +542,9 @@ function feetGapOf(key,spr){
   const gap = bottom<0 ? 0 : (h-1-bottom);
   _feetCache[key]=gap; return gap;
 }
+const _normCache={}, _stdCache={}, _ncv=document.createElement('canvas'), _ncx=_ncv.getContext('2d',{willReadFrequently:true});
+function _bbox(img){ const w=img.naturalWidth||img.width, h=img.naturalHeight||img.height; _ncv.width=w; _ncv.height=h; _ncx.clearRect(0,0,w,h); _ncx.drawImage(img,0,0); let data; try{ data=_ncx.getImageData(0,0,w,h).data; }catch(e){ return null; } let minY=h,maxY=-1; for(let y=0;y<h;y++){ for(let x=0;x<w;x++){ if(data[(y*w+x)*4+3]>16){ if(y<minY)minY=y; if(y>maxY)maxY=y; break; } } } if(maxY<0) return null; return {minY,maxY}; }
+function normFrame(key,img,idkey){ if(_normCache[key]!==undefined) return _normCache[key]||img; let std=_stdCache[idkey]; if(std===undefined){ const id=SPRITE_IMG[idkey]; if(!(id&&id.complete&&id.naturalWidth>0)) return img; const b=_bbox(id); _stdCache[idkey]=std=(b?{top:b.minY,bottom:b.maxY}:null); } if(!std) return img; const b=_bbox(img); if(!b){ _normCache[key]=null; return img; } const w=img.naturalWidth,h=img.naturalHeight; const out=document.createElement('canvas'); out.width=w; out.height=h; const o=out.getContext('2d'); o.imageSmoothingEnabled=false; o.drawImage(img,0,b.minY,w,(b.maxY-b.minY+1),0,std.top,w,(std.bottom-std.top+1)); _normCache[key]=out; return out; }
 function drawPlayer(){
   const p=player, d=p.def, x=ix(p)-rCamX, y=iy(p);
   if(p.shield>0){ ctx.strokeStyle='rgba(43,184,163,0.8)'; ctx.lineWidth=3; ctx.beginPath(); ctx.arc(x+p.w/2,y+p.h/2,p.w,0,6.28); ctx.stroke(); }
@@ -549,14 +552,15 @@ function drawPlayer(){
   let fr=d.id;
   if(!p.onGround) fr=d.id+'_j';
   else if(p.moving) fr=d.id+'_'+(Math.floor(p.animDist/34)%4);
-  const spr=SPRITE_IMG[fr]||SPRITE_IMG[d.id];
+  const raw=SPRITE_IMG[fr]||SPRITE_IMG[d.id];
   if(p.invuln>0 && Math.floor(p.invuln/4)%2===0) ctx.globalAlpha=0.45;
-  if(spr&&spr.complete&&spr.naturalWidth>0){
+  if(raw&&raw.complete&&raw.naturalWidth>0){
+    const spr=normFrame(fr,raw,d.id), sw=(spr.naturalWidth||spr.width), sh=(spr.naturalHeight||spr.height);
     const dh=Math.round(p.h*2.0), dw=Math.round(dh*0.75);
-    const _fg=(/_(0|2|j)$/.test(fr)?2:0); const dx=Math.round(x+p.w/2-dw/2), dy=Math.round(y+p.h-dh+_fg*dh/(spr.naturalHeight||64));
+    const dx=Math.round(x+p.w/2-dw/2), dy=Math.round(y+p.h-dh);
     ctx.imageSmoothingEnabled=false;
-    if(p.facing<0){ ctx.save(); ctx.translate(dx+dw,0); ctx.scale(-1,1); ctx.drawImage(spr,0,0,spr.naturalWidth,spr.naturalHeight,0,dy,dw,dh); ctx.restore(); }
-    else ctx.drawImage(spr,0,0,spr.naturalWidth,spr.naturalHeight,dx,dy,dw,dh);
+    if(p.facing<0){ ctx.save(); ctx.translate(dx+dw,0); ctx.scale(-1,1); ctx.drawImage(spr,0,0,sw,sh,0,dy,dw,dh); ctx.restore(); }
+    else ctx.drawImage(spr,0,0,sw,sh,dx,dy,dw,dh);
     ctx.imageSmoothingEnabled=true;
   } else { ctx.fillStyle=d.color; roundRect(x,y,p.w,p.h,5); ctx.fill(); }
   ctx.globalAlpha=1;
