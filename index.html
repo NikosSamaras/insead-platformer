@@ -142,7 +142,7 @@
 </div>
 
 <footer>A fan-made tribute platformer. Open in any browser. Renders at your display refresh (up to 144 fps); physics run on a fixed timestep.</footer>
-<div style="margin-top:6px;font-size:12px;opacity:.75;text-align:center">Campus Run <strong id="verNum" style="color:#f2c14e">v0.4.1</strong> &middot; current seed <code id="seedShow" style="color:#bcd6ff">&hellip;</code></div>
+<div style="margin-top:6px;font-size:12px;opacity:.75;text-align:center">Campus Run <strong id="verNum" style="color:#f2c14e">v0.4.2</strong> &middot; current seed <code id="seedShow" style="color:#bcd6ff">&hellip;</code></div>
 <section id="patchNotes" style="max-width:620px;width:92%;margin:14px auto 34px;background:#0e2547;border:1px solid #1d4b86;border-radius:12px;padding:14px 18px;font-size:13px;line-height:1.55;color:#dce6f5">
   <h3 style="color:#f2c14e;font-size:15px;margin-bottom:10px">&#128203; Patch Notes</h3>
   <div style="margin-bottom:12px"><strong style="color:#fff">v0.4.1 &mdash; Menu fixes</strong><ul style="margin:5px 0 0 18px">
@@ -551,7 +551,7 @@ function drawPlayer(){
   if(p.dashTime>0){ ctx.fillStyle='rgba(242,193,78,0.35)'; ctx.fillRect(x-p.facing*12,y+4,p.w,p.h-8); }
   let fr=d.id;
   if(!p.onGround) fr=d.id+'_j';
-  else if(p.moving){ const seq=[0,1,2,3,2,1]; fr=d.id+'_'+seq[Math.floor(p.animDist/14)%seq.length]; }
+  /* walk frames disabled: their hands sit at different heights and pop. Steady idle pose while grounded. */
   const spr=SPRITE_IMG[fr]||SPRITE_IMG[d.id];
   if(p.invuln>0 && Math.floor(p.invuln/4)%2===0) ctx.globalAlpha=0.45;
   if(spr&&spr.complete&&spr.naturalWidth>0){
