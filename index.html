@@ -42,6 +42,43 @@
   .lbrow span:last-child{font-family:monospace;color:#bcd6ff}
   #toast{position:absolute;top:54px;left:50%;transform:translateX(-50%);background:rgba(8,21,43,.85);padding:6px 16px;border-radius:20px;font-size:13px;border:1px solid #2a558f;opacity:0;transition:opacity .3s;pointer-events:none}
   footer{font-size:11px;opacity:.55;text-align:center;line-height:1.5}
+  /* ---- 3D character carousel ---- */
+  .carousel{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;margin:2px 0}
+  .stage3d{width:300px;height:250px;perspective:1000px;perspective-origin:50% 42%;flex:0 0 auto}
+  .ring3d{position:relative;width:166px;height:230px;margin:0 auto;transform-style:preserve-3d;transition:transform .55s cubic-bezier(.22,.61,.36,1)}
+  .card3d{position:absolute;left:0;top:0;width:166px;backface-visibility:hidden;opacity:.4;filter:brightness(.65) saturate(.8);transition:opacity .45s,filter .45s,box-shadow .3s;will-change:transform}
+  .card3d.active{opacity:1;filter:none;border-color:var(--gold);box-shadow:0 14px 32px rgba(0,0,0,.55),0 0 0 2px var(--gold) inset}
+  .carBtn{flex:0 0 auto;width:46px;height:46px;border-radius:50%;border:2px solid #2a558f;background:#0e2547;color:var(--ink);font-size:24px;line-height:1;cursor:pointer;transition:transform .1s,background .15s,border-color .15s}
+  .carBtn:hover{background:#16335f;border-color:var(--gold);transform:scale(1.08)}
+  .carBtn:active{transform:scale(.96)}
+  .carInfo{font-size:13px;opacity:.92;min-height:36px;line-height:1.4}
+  .carInfo strong{color:var(--gold);font-size:15px}
+  .carInfo .carBlurb{font-size:12px;opacity:.8;margin-top:2px;max-width:540px;margin-left:auto;margin-right:auto}
+  /* ---- 3D character pop, select-move, layout fit ---- */
+  .card3d{transform-style:preserve-3d}
+  .card3d .avatar{overflow:visible;transform-style:preserve-3d;position:relative}
+  .card3d .stats{display:none}
+  .card3d.active .avatar img{animation:floaty 2.1s ease-in-out infinite}
+  @keyframes floaty{0%,100%{transform:translateZ(40px) translateY(0) scale(1.12)}50%{transform:translateZ(54px) translateY(-8px) scale(1.15)}}
+  .card3d.active .avatar::after{content:"";position:absolute;left:50%;bottom:0;width:62px;height:13px;transform:translateX(-50%);background:radial-gradient(ellipse at center,rgba(0,0,0,.5),rgba(0,0,0,0) 70%);border-radius:50%}
+  .card3d.picking{box-shadow:0 0 0 3px #fff,0 0 34px var(--gold)!important}
+  .card3d.picking .avatar img{animation:charPick .62s ease-out}
+  @keyframes charPick{0%{transform:translateZ(40px) translateY(0) scale(1.12)}25%{transform:translateZ(80px) translateY(-44px) scale(1.3) rotate(-10deg)}55%{transform:translateZ(82px) translateY(-50px) scale(1.32) rotate(8deg)}80%{transform:translateZ(50px) translateY(0) scaleX(1.2) scaleY(.85)}100%{transform:translateZ(40px) translateY(-4px) scale(1.16)}}
+  #selectScreen{justify-content:center;gap:6px;padding:12px}
+  #selectScreen h2{font-size:20px}
+  #selectScreen .subtitle{font-size:12px;margin:0;max-width:620px}
+  #selectScreen .controls{font-size:11px;line-height:1.5}
+  #selectScreen .stage3d{height:196px}
+  #selectScreen .ring3d{height:188px}
+  /* ---- v0.4.1 menu collision fix ---- */
+  #selectScreen .stage3d{height:210px;display:flex;align-items:flex-end;justify-content:center}
+  #selectScreen .ring3d{height:170px;margin:0}
+  #selectScreen .carousel{margin:2px 0 14px}
+  #selectScreen .carInfo{margin-top:2px}
+  .card3d.active .avatar img{animation:floaty2 2.2s ease-in-out infinite!important}
+  @keyframes floaty2{0%,100%{transform:translateZ(24px) translateY(0) scale(1.06)}50%{transform:translateZ(34px) translateY(-5px) scale(1.08)}}
+  .card3d.picking .avatar img{animation:charPick2 .62s ease-out!important}
+  @keyframes charPick2{0%{transform:translateZ(24px) translateY(0) scale(1.06)}30%{transform:translateZ(48px) translateY(-26px) scale(1.18) rotate(-8deg)}60%{transform:translateZ(48px) translateY(-28px) scale(1.2) rotate(6deg)}82%{transform:translateZ(30px) translateY(0) scaleX(1.15) scaleY(.88)}100%{transform:translateZ(24px) translateY(0) scale(1.1)}}
 </style>
 </head>
 <body>
@@ -53,9 +90,14 @@
   <div id="selectScreen" class="screen">
     <h2>Choose your professor</h2>
     <p class="subtitle">Different size, speed, jump and a special move (press <kbd>X</kbd>) you unlock by defeating deadlines. Grab credits, mind the pits, and reach the INSEAD tower.</p>
-    <div class="chars" id="charList"></div>
+    <div class="carousel">
+      <button class="carBtn" id="carPrev" aria-label="Previous professor">&#8249;</button>
+      <div class="stage3d"><div class="ring3d" id="charList"></div></div>
+      <button class="carBtn" id="carNext" aria-label="Next professor">&#8250;</button>
+    </div>
+    <div class="carInfo" id="carInfo"></div>
     <p class="controls">Move <kbd>&larr;</kbd><kbd>&rarr;</kbd>/<kbd>A</kbd><kbd>D</kbd> &nbsp;&middot;&nbsp; Jump <kbd>Space</kbd>/<kbd>&uarr;</kbd>/<kbd>W</kbd> (hold = higher) &nbsp;&middot;&nbsp; Special <kbd>X</kbd> &nbsp;&middot;&nbsp; Pause <kbd>P</kbd></p>
-    <div class="row"><button class="btn ghost" id="lbOpenBtn">&#127942; Leaderboard</button></div>
+    <div class="row"><button class="btn" id="carPick">Select &#9656;</button><button class="btn ghost" id="lbOpenBtn">&#127942; Leaderboard</button></div>
   </div>
 
   <div id="startScreen" class="screen hidden">
@@ -95,6 +137,31 @@
 </div>
 
 <footer>A fan-made tribute platformer. Open in any browser. Renders at your display refresh (up to 144 fps); physics run on a fixed timestep.</footer>
+<div style="margin-top:6px;font-size:12px;opacity:.75;text-align:center">Campus Run <strong id="verNum" style="color:#f2c14e">v0.4.1</strong> &middot; current seed <code id="seedShow" style="color:#bcd6ff">&hellip;</code></div>
+<section id="patchNotes" style="max-width:620px;width:92%;margin:14px auto 34px;background:#0e2547;border:1px solid #1d4b86;border-radius:12px;padding:14px 18px;font-size:13px;line-height:1.55;color:#dce6f5">
+  <h3 style="color:#f2c14e;font-size:15px;margin-bottom:10px">&#128203; Patch Notes</h3>
+  <div style="margin-bottom:12px"><strong style="color:#fff">v0.4.1 &mdash; Menu fixes</strong><ul style="margin:5px 0 0 18px">
+    <li>Fixed carousel cards overlapping the professor name text.</li>
+    <li>Toned down the character pop/float and anchored the ring so it stays clear of the surrounding text.</li>
+  </ul></div>
+  <div style="margin-bottom:12px"><strong style="color:#fff">v0.4.0 &mdash; 3D menu</strong><ul style="margin:5px 0 0 18px">
+    <li>New 3D rotating character carousel &mdash; professors pop out in 3D with a floating bob and ground shadow.</li>
+    <li>Selecting a professor now plays a jump animation before the level starts.</li>
+    <li>Menu redesigned to fit the frame &mdash; no more scrolling.</li>
+    <li>Seeds are now fixed per run and only change after you graduate (beat all four levels).</li>
+    <li>Removed the manual seed picker; the current seed is shown above.</li>
+  </ul></div>
+  <div style="margin-bottom:12px"><strong style="color:#fff">v0.3.0 &mdash; Dynamics</strong><ul style="margin:5px 0 0 18px">
+    <li>Seeded, reproducible level &amp; cave generation.</li>
+    <li>Screen shake on stomps/hits and a combo multiplier counter with bonus credits.</li>
+  </ul></div>
+  <div style="margin-bottom:12px"><strong style="color:#fff">v0.2.0 &mdash; Smooth walk</strong><ul style="margin:5px 0 0 18px">
+    <li>Fixed the jittery walk animation &mdash; feet are planted, only the limbs animate.</li>
+  </ul></div>
+  <div><strong style="color:#fff">v0.1.0 &mdash; First playable</strong><ul style="margin:5px 0 0 18px">
+    <li>Five professors, four levels, catacombs, leaderboard, and the INSEAD tower finish.</li>
+  </ul></div>
+</section>
 
 <script>
 "use strict";
@@ -519,9 +586,34 @@ const screens=['selectScreen','startScreen','endScreen','pauseScreen','lbScreen'
 function showScreen(id){ screens.forEach(s=>document.getElementById(s).classList.toggle('hidden',s!==id)); }
 function hideAll(){ screens.forEach(s=>document.getElementById(s).classList.add('hidden')); }
 const charList=document.getElementById('charList');
-CHARS.forEach((c,i)=>{ const card=document.createElement('div'); card.className='card';
-  card.innerHTML='<div class="avatar" style="background:linear-gradient(160deg,'+c.color+','+c.dark+')"><img src="'+SPRITES[c.id]+'" alt="'+c.name+'" style="height:74px;image-rendering:pixelated;filter:drop-shadow(0 2px 3px rgba(0,0,0,.45))"></div><h3>'+c.name+'</h3><div class="role">'+c.role+'</div><div class="stats">'+c.blurb+'</div><div style="margin-top:6px">'+c.tags.map(t=>'<span class="pill">'+t+'</span>').join('')+'</div>';
-  card.addEventListener('click',()=>{ state.charIndex=i; openStart(0,true); }); charList.appendChild(card); });
+const CAR_N=CHARS.length, CAR_STEP=360/CAR_N, CAR_R=240;
+let carCur=0, carCards=[], carAuto=null, carUser=false, carPicking=false;
+function carIdx(){ return ((carCur%CAR_N)+CAR_N)%CAR_N; }
+function carStop(){ carUser=true; if(carAuto){ clearInterval(carAuto); carAuto=null; } }
+function carRender(){
+  charList.style.transform='translateZ(-'+CAR_R+'px) rotateY('+(-carCur*CAR_STEP)+'deg)';
+  const idx=carIdx();
+  carCards.forEach((el,i)=>el.classList.toggle('active', i===idx));
+  const c=CHARS[idx], info=document.getElementById('carInfo');
+  if(info) info.innerHTML='<strong>'+c.name+'</strong> &middot; '+c.role+'<div class="carBlurb">'+c.blurb+'</div>';
+}
+function carGo(d){ carCur+=d; carRender(); }
+function carPick(){ if(carPicking) return; carStop(); const idx=carIdx(); state.charIndex=idx; const card=carCards[idx], img=card&&card.querySelector('img'); carPicking=true; if(img){ const jk=CHARS[idx].id+'_j'; if(SPRITES[jk]) img.src=SPRITES[jk]; } if(card) card.classList.add('picking'); setTimeout(function(){ if(card) card.classList.remove('picking'); if(img) img.src=SPRITES[CHARS[idx].id]; carPicking=false; openStart(0,true); }, 640); }
+CHARS.forEach((c,i)=>{
+  const card=document.createElement('div'); card.className='card card3d';
+  card.style.transform='rotateY('+(i*CAR_STEP)+'deg) translateZ('+CAR_R+'px)';
+  card.innerHTML='<div class="avatar" style="background:linear-gradient(160deg,'+c.color+','+c.dark+')"><img src="'+SPRITES[c.id]+'" alt="'+c.name+'" style="height:74px;image-rendering:pixelated;filter:drop-shadow(0 4px 5px rgba(0,0,0,.55))"></div><h3>'+c.name+'</h3><div class="role">'+c.role+'</div><div style="margin-top:6px">'+c.tags.map(t=>'<span class="pill">'+t+'</span>').join('')+'</div>';
+  card.addEventListener('click',()=>{ carStop(); const idx=carIdx(); if(i===idx){ carPick(); } else { let diff=(i-idx+CAR_N)%CAR_N; if(diff>CAR_N/2) diff-=CAR_N; carCur+=diff; carRender(); } });
+  carCards.push(card); charList.appendChild(card);
+});
+(function(){ const p=document.getElementById('carPrev'), n=document.getElementById('carNext'), k=document.getElementById('carPick');
+  if(p) p.addEventListener('click',()=>{ carStop(); carGo(-1); });
+  if(n) n.addEventListener('click',()=>{ carStop(); carGo(1); });
+  if(k) k.addEventListener('click',carPick);
+})();
+addEventListener('keydown',e=>{ if(state.scene!=='select') return; if(e.key==='ArrowLeft'){ carStop(); carGo(-1); } else if(e.key==='ArrowRight'){ carStop(); carGo(1); } else if(e.key==='Enter'){ carPick(); } });
+carAuto=setInterval(()=>{ if(!carUser) carGo(1); }, 3500);
+carRender();
 function openStart(idx,fresh){ if(fresh){ state.lives=3; state.totalScore=0; state.runTicks=0; state.kills=0; state.specialUnlocked=false; } state.levelIndex=idx; document.getElementById('levelTitle').textContent=LEVELS[idx].name; document.getElementById('levelDesc').textContent=LEVELS[idx].desc+'  Playing as '+CHARS[state.charIndex].name+'.'; state.scene='start'; showScreen('startScreen'); }
 document.getElementById('goBtn').addEventListener('click',()=>{ hideAll(); startLevel(state.levelIndex); });
 document.getElementById('changeCharBtn').addEventListener('click',()=>{ state.scene='select'; showScreen('selectScreen'); });
@@ -547,13 +639,13 @@ try{
   function sr(){ _s^=_s<<13; _s>>>=0; _s^=_s>>>17; _s^=_s<<5; _s>>>=0; return _s/4294967296; }
   function hashStr(str){ let h=2166136261>>>0; str=''+str; for(let i=0;i<str.length;i++){ h^=str.charCodeAt(i); h=Math.imul(h,16777619); } return h>>>0; }
   Math.random = sr;
-  function parseHashSeed(){ const m=/seed=([A-Za-z0-9_-]+)/.exec(location.hash||''); return m?m[1]:null; }
-  let baseSeed = parseHashSeed() || Math.floor(_origRandom()*2.8e6).toString(36);
-  function dailySeed(){ const d=new Date(); return 'D'+d.getUTCFullYear()+('0'+(d.getUTCMonth()+1)).slice(-2)+('0'+d.getUTCDate()).slice(-2); }
-  function setBaseSeed(s){ s=(''+(s||'')).trim(); if(s) baseSeed=s; try{ location.hash='seed='+baseSeed; }catch(e){} syncSeedUI(); }
-  let caveCount=0;
+  const SEED_KEY='insead_seed_v1';
+  function newSeed(){ return Math.floor(_origRandom()*2.8e6).toString(36); }
+  let baseSeed=''; try{ baseSeed=localStorage.getItem(SEED_KEY)||''; }catch(e){}
+  if(!baseSeed){ baseSeed=newSeed(); try{ localStorage.setItem(SEED_KEY,baseSeed); }catch(e){} }
   const _gs=genSurface; genSurface=function(){ try{ srandSeed(hashStr(baseSeed+'|L'+((state&&state.levelIndex)||0))); }catch(e){} return _gs.apply(this,arguments); };
-  const _gc=genCave; genCave=function(){ try{ caveCount++; srandSeed(hashStr(baseSeed+'|L'+((state&&state.levelIndex)||0)+'|C'+caveCount)); }catch(e){} return _gc.apply(this,arguments); };
+  const _gc=genCave; genCave=function(){ try{ srandSeed(hashStr(baseSeed+'|L'+((state&&state.levelIndex)||0)+'|cave')); }catch(e){} return _gc.apply(this,arguments); };
+  const _win=winLevel; winLevel=function(){ const wasLast=(state&&state.levelIndex>=LEVELS.length-1); _win.apply(this,arguments); if(wasLast){ baseSeed=newSeed(); try{ localStorage.setItem(SEED_KEY,baseSeed); }catch(e){} const sd=document.getElementById('seedShow'); if(sd) sd.textContent=baseSeed; } };
   let shake=0, prevLives=null, prevKills=0, combo=0, comboT=0;
   const _d0=draw; draw=function(){
     try{
@@ -569,19 +661,8 @@ try{
     if(sx||sy){ ctx.save(); ctx.translate(Math.round(sx),Math.round(sy)); _d0.apply(this,arguments); ctx.restore(); } else { _d0.apply(this,arguments); }
     try{ if(combo>=2 && state.scene==='play'){ ctx.save(); ctx.textAlign='center'; ctx.font='bold 24px Verdana'; ctx.fillStyle='rgba(0,0,0,.45)'; ctx.fillText('COMBO ×'+combo, W/2+2, 74); ctx.fillStyle='#ffd36b'; ctx.fillText('COMBO ×'+combo, W/2, 72); ctx.restore(); } }catch(e){}
   };
-  function syncSeedUI(){ const i=document.getElementById('seedInput'); if(i && document.activeElement!==i) i.value=baseSeed; }
-  function buildSeedUI(){
-    if(document.getElementById('seedBar')) return;
-    const bar=document.createElement('div'); bar.id='seedBar';
-    bar.style.cssText='position:fixed;top:6px;right:8px;z-index:99999;font:12px Verdana;color:#dff;background:rgba(8,21,43,.8);padding:6px 8px;border-radius:8px;display:flex;gap:5px;align-items:center;box-shadow:0 2px 8px rgba(0,0,0,.4)';
-    bar.innerHTML='<span style="opacity:.8">Seed</span><input id="seedInput" spellcheck="false" style="width:96px;font:12px monospace;padding:2px 4px;border-radius:4px;border:1px solid #355;background:#0b1a30;color:#cfe"><button id="seedSet" style="cursor:pointer">Use</button><button id="seedRand" title="Random" style="cursor:pointer">🎲</button><button id="seedDaily" style="cursor:pointer">Daily</button><span style="opacity:.6;font-size:11px">(applies next level)</span>';
-    document.body.appendChild(bar);
-    document.getElementById('seedInput').value=baseSeed;
-    document.getElementById('seedSet').onclick=function(){ setBaseSeed(document.getElementById('seedInput').value); };
-    document.getElementById('seedRand').onclick=function(){ setBaseSeed(Math.floor(_origRandom()*2.8e6).toString(36)); };
-    document.getElementById('seedDaily').onclick=function(){ setBaseSeed(dailySeed()); };
-  }
-  if(document.readyState==='loading') addEventListener('DOMContentLoaded',buildSeedUI); else buildSeedUI();
+  function showSeed(){ const sd=document.getElementById('seedShow'); if(sd) sd.textContent=baseSeed; }
+  if(document.readyState==='loading') addEventListener('DOMContentLoaded',showSeed); else showSeed();
 }catch(e){ console.warn('enhancements failed', e); }
 })();
 
