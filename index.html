@@ -551,16 +551,15 @@ function drawPlayer(){
   if(p.dashTime>0){ ctx.fillStyle='rgba(242,193,78,0.35)'; ctx.fillRect(x-p.facing*12,y+4,p.w,p.h-8); }
   let fr=d.id;
   if(!p.onGround) fr=d.id+'_j';
-  else if(p.moving) fr=d.id+'_'+((Math.floor(p.animDist/28)%2)?3:1);
-  const raw=SPRITE_IMG[fr]||SPRITE_IMG[d.id];
+  else if(p.moving){ const seq=[0,1,2,3,2,1]; fr=d.id+'_'+seq[Math.floor(p.animDist/14)%seq.length]; }
+  const spr=SPRITE_IMG[fr]||SPRITE_IMG[d.id];
   if(p.invuln>0 && Math.floor(p.invuln/4)%2===0) ctx.globalAlpha=0.45;
-  if(raw&&raw.complete&&raw.naturalWidth>0){
-    const spr=normFrame(fr,raw,d.id), sw=(spr.naturalWidth||spr.width), sh=(spr.naturalHeight||spr.height);
+  if(spr&&spr.complete&&spr.naturalWidth>0){
     const dh=Math.round(p.h*2.0), dw=Math.round(dh*0.75);
     const dx=Math.round(x+p.w/2-dw/2), dy=Math.round(y+p.h-dh);
     ctx.imageSmoothingEnabled=false;
-    if(p.facing<0){ ctx.save(); ctx.translate(dx+dw,0); ctx.scale(-1,1); ctx.drawImage(spr,0,0,sw,sh,0,dy,dw,dh); ctx.restore(); }
-    else ctx.drawImage(spr,0,0,sw,sh,dx,dy,dw,dh);
+    if(p.facing<0){ ctx.save(); ctx.translate(dx+dw,0); ctx.scale(-1,1); ctx.drawImage(spr,0,0,spr.naturalWidth,spr.naturalHeight,0,dy,dw,dh); ctx.restore(); }
+    else ctx.drawImage(spr,0,0,spr.naturalWidth,spr.naturalHeight,dx,dy,dw,dh);
     ctx.imageSmoothingEnabled=true;
   } else { ctx.fillStyle=d.color; roundRect(x,y,p.w,p.h,5); ctx.fill(); }
   ctx.globalAlpha=1;
