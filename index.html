@@ -79,6 +79,11 @@
   @keyframes floaty2{0%,100%{transform:translateZ(24px) translateY(0) scale(1.06)}50%{transform:translateZ(34px) translateY(-5px) scale(1.08)}}
   .card3d.picking .avatar img{animation:charPick2 .62s ease-out!important}
   @keyframes charPick2{0%{transform:translateZ(24px) translateY(0) scale(1.06)}30%{transform:translateZ(48px) translateY(-26px) scale(1.18) rotate(-8deg)}60%{transform:translateZ(48px) translateY(-28px) scale(1.2) rotate(6deg)}82%{transform:translateZ(30px) translateY(0) scaleX(1.15) scaleY(.88)}100%{transform:translateZ(24px) translateY(0) scale(1.1)}}
+  /* character-only carousel tiles */
+  #selectScreen .stage3d{height:172px}
+  #selectScreen .ring3d{height:150px}
+  .carInfo{min-height:62px}
+  .carInfo .carTags{margin-top:6px}
 </style>
 </head>
 <body>
@@ -548,7 +553,7 @@ function drawPlayer(){
   if(p.invuln>0 && Math.floor(p.invuln/4)%2===0) ctx.globalAlpha=0.45;
   if(spr&&spr.complete&&spr.naturalWidth>0){
     const dh=Math.round(p.h*2.0), dw=Math.round(dh*0.75);
-    const _gap=feetGapOf(fr,spr), _ref=feetGapOf(d.id,SPRITE_IMG[d.id]); const dx=Math.round(x+p.w/2-dw/2), dy=Math.round(y+p.h-dh+(_gap-_ref)*dh/spr.naturalHeight);
+    const _fg=(/_(0|2|j)$/.test(fr)?2:0); const dx=Math.round(x+p.w/2-dw/2), dy=Math.round(y+p.h-dh+_fg*dh/(spr.naturalHeight||64));
     ctx.imageSmoothingEnabled=false;
     if(p.facing<0){ ctx.save(); ctx.translate(dx+dw,0); ctx.scale(-1,1); ctx.drawImage(spr,0,0,spr.naturalWidth,spr.naturalHeight,0,dy,dw,dh); ctx.restore(); }
     else ctx.drawImage(spr,0,0,spr.naturalWidth,spr.naturalHeight,dx,dy,dw,dh);
@@ -595,14 +600,14 @@ function carRender(){
   const idx=carIdx();
   carCards.forEach((el,i)=>el.classList.toggle('active', i===idx));
   const c=CHARS[idx], info=document.getElementById('carInfo');
-  if(info) info.innerHTML='<strong>'+c.name+'</strong> &middot; '+c.role+'<div class="carBlurb">'+c.blurb+'</div>';
+  if(info) info.innerHTML='<strong>'+c.name+'</strong> &middot; '+c.role+'<div class="carBlurb">'+c.blurb+'</div><div class="carTags">'+c.tags.map(t=>'<span class="pill">'+t+'</span>').join('')+'</div>';
 }
 function carGo(d){ carCur+=d; carRender(); }
 function carPick(){ if(carPicking) return; carStop(); const idx=carIdx(); state.charIndex=idx; const card=carCards[idx], img=card&&card.querySelector('img'); carPicking=true; if(img){ const jk=CHARS[idx].id+'_j'; if(SPRITES[jk]) img.src=SPRITES[jk]; } if(card) card.classList.add('picking'); setTimeout(function(){ if(card) card.classList.remove('picking'); if(img) img.src=SPRITES[CHARS[idx].id]; carPicking=false; openStart(0,true); }, 640); }
 CHARS.forEach((c,i)=>{
   const card=document.createElement('div'); card.className='card card3d';
   card.style.transform='rotateY('+(i*CAR_STEP)+'deg) translateZ('+CAR_R+'px)';
-  card.innerHTML='<div class="avatar" style="background:linear-gradient(160deg,'+c.color+','+c.dark+')"><img src="'+SPRITES[c.id]+'" alt="'+c.name+'" style="height:74px;image-rendering:pixelated;filter:drop-shadow(0 4px 5px rgba(0,0,0,.55))"></div><h3>'+c.name+'</h3><div class="role">'+c.role+'</div><div style="margin-top:6px">'+c.tags.map(t=>'<span class="pill">'+t+'</span>').join('')+'</div>';
+  card.innerHTML='<div class="avatar" style="background:linear-gradient(160deg,'+c.color+','+c.dark+')"><img src="'+SPRITES[c.id]+'" alt="'+c.name+'" style="height:74px;image-rendering:pixelated;filter:drop-shadow(0 4px 5px rgba(0,0,0,.55))"></div>';
   card.addEventListener('click',()=>{ carStop(); const idx=carIdx(); if(i===idx){ carPick(); } else { let diff=(i-idx+CAR_N)%CAR_N; if(diff>CAR_N/2) diff-=CAR_N; carCur+=diff; carRender(); } });
   carCards.push(card); charList.appendChild(card);
 });
