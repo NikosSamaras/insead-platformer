@@ -551,7 +551,7 @@ function drawPlayer(){
   if(p.dashTime>0){ ctx.fillStyle='rgba(242,193,78,0.35)'; ctx.fillRect(x-p.facing*12,y+4,p.w,p.h-8); }
   let fr=d.id;
   if(!p.onGround) fr=d.id+'_j';
-  else if(p.moving) fr=d.id+'_'+(Math.floor(p.animDist/34)%4);
+  else if(p.moving) fr=d.id+'_'+((Math.floor(p.animDist/28)%2)?3:1);
   const raw=SPRITE_IMG[fr]||SPRITE_IMG[d.id];
   if(p.invuln>0 && Math.floor(p.invuln/4)%2===0) ctx.globalAlpha=0.45;
   if(raw&&raw.complete&&raw.naturalWidth>0){
