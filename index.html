@@ -142,9 +142,14 @@
 </div>
 
 <footer>A fan-made tribute platformer. Open in any browser. Renders at your display refresh (up to 144 fps); physics run on a fixed timestep.</footer>
-<div style="margin-top:6px;font-size:12px;opacity:.75;text-align:center">Campus Run <strong id="verNum" style="color:#f2c14e">v0.4.2</strong> &middot; current seed <code id="seedShow" style="color:#bcd6ff">&hellip;</code></div>
+<div style="margin-top:6px;font-size:12px;opacity:.75;text-align:center">Campus Run <strong id="verNum" style="color:#f2c14e">v0.4.3</strong> &middot; current seed <code id="seedShow" style="color:#bcd6ff">&hellip;</code></div>
 <section id="patchNotes" style="max-width:620px;width:92%;margin:14px auto 34px;background:#0e2547;border:1px solid #1d4b86;border-radius:12px;padding:14px 18px;font-size:13px;line-height:1.55;color:#dce6f5">
   <h3 style="color:#f2c14e;font-size:15px;margin-bottom:10px">&#128203; Patch Notes</h3>
+  <div style="margin-bottom:12px"><strong style="color:#fff">v0.4.3 &mdash; The real walk fix</strong><ul style="margin:5px 0 0 18px">
+    <li>Found the actual cause of the "floating/bobbing" character: a resting body sank ~0.6px each frame before the ground collision re-fired, creating a constant 30Hz vertical shimmer (unrelated to the sprites).</li>
+    <li>Added a ground-stick so a grounded character rests perfectly flush &mdash; no more bobbing when standing or walking.</li>
+    <li>Restored the smooth walking animation now that the real bug is fixed.</li>
+  </ul></div>
   <div style="margin-bottom:12px"><strong style="color:#fff">v0.4.1 &mdash; Menu fixes</strong><ul style="margin:5px 0 0 18px">
     <li>Fixed carousel cards overlapping the professor name text.</li>
     <li>Toned down the character pop/float and anchored the ring so it stays clear of the surrounding text.</li>
@@ -362,6 +367,8 @@ function update(){
   p._xk=keys['x'];
 
   collide(p);
+  /* anti-jitter ground stick: a resting body sinks ~0.6px/frame before collision re-fires, causing a 30Hz vertical shimmer. If solid tile is directly under the feet and we're not rising, snap flush and rest. */
+  if(p.vy>=0 && !p.onGround){ const _fr=Math.floor((p.y+p.h)/TILE), _l=Math.floor(p.x/TILE), _r=Math.floor((p.x+p.w-1)/TILE); for(let _cx=_l;_cx<=_r;_cx++){ if(solidAt(_cx,_fr)){ p.y=_fr*TILE-p.h; p.vy=0; p.onGround=true; break; } } }
   if(p.onGround){ p.coyote=8; if(p.jumps>0&&p.vy>=0)p.jumps=0; if(p.pounding)endPound(p); }
 
   const dx=p.x-px0;
@@ -551,7 +558,7 @@ function drawPlayer(){
   if(p.dashTime>0){ ctx.fillStyle='rgba(242,193,78,0.35)'; ctx.fillRect(x-p.facing*12,y+4,p.w,p.h-8); }
   let fr=d.id;
   if(!p.onGround) fr=d.id+'_j';
-  /* walk frames disabled: their hands sit at different heights and pop. Steady idle pose while grounded. */
+  else if(p.moving){ const seq=[0,1,2,3,2,1]; fr=d.id+'_'+seq[Math.floor(p.animDist/14)%seq.length]; }
   const spr=SPRITE_IMG[fr]||SPRITE_IMG[d.id];
   if(p.invuln>0 && Math.floor(p.invuln/4)%2===0) ctx.globalAlpha=0.45;
   if(spr&&spr.complete&&spr.naturalWidth>0){
