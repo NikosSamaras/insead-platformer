@@ -142,9 +142,13 @@
 </div>
 
 <footer>A fan-made tribute platformer. Open in any browser. Renders at your display refresh (up to 144 fps); physics run on a fixed timestep.</footer>
-<div style="margin-top:6px;font-size:12px;opacity:.75;text-align:center">Campus Run <strong id="verNum" style="color:#f2c14e">v0.4.3</strong> &middot; current seed <code id="seedShow" style="color:#bcd6ff">&hellip;</code></div>
+<div style="margin-top:6px;font-size:12px;opacity:.75;text-align:center">Campus Run <strong id="verNum" style="color:#f2c14e">v0.4.4</strong> &middot; current seed <code id="seedShow" style="color:#bcd6ff">&hellip;</code></div>
 <section id="patchNotes" style="max-width:620px;width:92%;margin:14px auto 34px;background:#0e2547;border:1px solid #1d4b86;border-radius:12px;padding:14px 18px;font-size:13px;line-height:1.55;color:#dce6f5">
   <h3 style="color:#f2c14e;font-size:15px;margin-bottom:10px">&#128203; Patch Notes</h3>
+  <div style="margin-bottom:12px"><strong style="color:#fff">v0.4.4 &mdash; Pipes &amp; game over</strong><ul style="margin:5px 0 0 18px">
+    <li>Leaving the catacombs now plays a Mario-style pipe-emerge animation; controls are frozen until you fully rise out.</li>
+    <li>Running out of lives now restarts from Level 1 (instead of retrying the same level).</li>
+  </ul></div>
   <div style="margin-bottom:12px"><strong style="color:#fff">v0.4.3 &mdash; The real walk fix</strong><ul style="margin:5px 0 0 18px">
     <li>Found the actual cause of the "floating/bobbing" character: a resting body sank ~0.6px each frame before the ground collision re-fired, creating a constant 30Hz vertical shimmer (unrelated to the sprites).</li>
     <li>Added a ground-stick so a grounded character rests perfectly flush &mdash; no more bobbing when standing or walking.</li>
@@ -241,7 +245,7 @@ function solidAt(cx,cy){ if(cy<0||cx<0||!world||cx>=world.cols||cy>=ROWS) return
 function tileAt(cx,cy){ if(!world||cx<0||cx>=world.cols||cy<0||cy>=ROWS) return 0; return world.grid[cy][cx]; }
 
 /* ---------- entities ---------- */
-function makePlayer(def,sx,sy){ return {def,x:sx,y:sy,px:sx,py:sy,w:def.w,h:def.h,vx:0,vy:0,onGround:false,facing:1,jumps:0,maxJumps:def.jumpType==='double'?2:1,coyote:0,jumpBuf:0,shield:0,dashTime:0,dashCd:0,throwCd:0,poundCd:0,invuln:0,pounding:false,animDist:0,moving:false,_jk:false,_xk:false}; }
+function makePlayer(def,sx,sy){ return {def,x:sx,y:sy,px:sx,py:sy,w:def.w,h:def.h,vx:0,vy:0,onGround:false,facing:1,jumps:0,maxJumps:def.jumpType==='double'?2:1,coyote:0,jumpBuf:0,shield:0,dashTime:0,dashCd:0,throwCd:0,poundCd:0,invuln:0,pounding:false,animDist:0,moving:false,_jk:false,_xk:false,pipeT:0,pipeDur:0,pipeY0:0,pipeY1:0}; }
 function makeEnemy(x,y,type){ return {x,y,px:x,py:y,w:26,h:26,vx:(Math.random()<.5?-1:1)*(1.1+(type?0.5:0)),vy:0,alive:true,stun:0,squash:0,type:type||0}; }
 
 /* ---------- level generation (random each play) ---------- */
@@ -320,9 +324,15 @@ function exitCave(){
   world={grid:surfaceSave.grid,cols:surfaceSave.cols,theme:'surface',goal:surfaceSave.goal,exit:null};
   coins=surfaceSave.coins; enemies=surfaceSave.enemies; projectiles=[]; particles=[];
   const rc=surfaceSave.returnCol;
-  player.x=rc*TILE; player.y=GROUND_Y*TILE-player.h; player.vx=0; player.vy=0; player.px=player.x; player.py=player.y; player.animDist=0; player.invuln=50;
+  player.x=rc*TILE;
+  player.pipeY1=GROUND_Y*TILE-player.h;            /* final standing position */
+  player.pipeY0=(GROUND_Y*TILE-10)+player.h;        /* submerged start (hidden behind pipe rim) */
+  player.y=player.pipeY0; player.vx=0; player.vy=0;
+  player.pipeDur=48; player.pipeT=48;               /* ~0.8s emerge, input frozen */
+  player.onGround=true; player.moving=false; player.facing=1;
+  player.px=player.x; player.py=player.y; player.animDist=0; player.invuln=50;
   camX=Math.max(0,player.x-W*0.4); prevCamX=camX; mode='surface'; surfaceSave=null;
-  toast('Back to the surface! Carry on →');
+  toast('Out of the catacombs! ↑');
 }
 
 /* ---------- physics ---------- */
@@ -341,6 +351,17 @@ function dust(p){ for(let i=0;i<5;i++) particles.push({x:p.x+p.w/2,y:p.y+p.h,vx:
 
 function update(){
   if(state.scene!=='play') return;
+  /* pipe emerge: freeze player control and slide him up out of the pipe */
+  if(player && player.pipeT>0){
+    const p=player; p.pipeT--;
+    const k=1-(p.pipeT/p.pipeDur);
+    p.y=p.pipeY0+(p.pipeY1-p.pipeY0)*k;
+    if(p.pipeT<=0){ p.y=p.pipeY1; p.vy=0; p.onGround=true; }
+    for(const pt of particles){ pt.x+=pt.vx; pt.y+=pt.vy; pt.vy+=0.2; pt.life--; }
+    particles=particles.filter(pt=>pt.life>0);
+    const target=p.x-W*0.4; camX+=(target-camX)*0.14; camX=Math.max(0,Math.min(camX,world.cols*TILE-W));
+    return;
+  }
   if(mode==='surface') levelClock++;
   const p=player, d=p.def;
   if(p.shield>0)p.shield--; if(p.dashTime>0)p.dashTime--; if(p.dashCd>0)p.dashCd--; if(p.throwCd>0)p.throwCd--; if(p.poundCd>0)p.poundCd--; if(p.invuln>0)p.invuln--; if(p.coyote>0)p.coyote--; if(p.jumpBuf>0)p.jumpBuf--;
@@ -448,7 +469,7 @@ function winLevel(){
   }
   showScreen('endScreen');
 }
-function loseGame(){ state.scene='end'; document.getElementById('endTitle').textContent='Out of lives'; document.getElementById('endScore').textContent='Score: '+state.score; document.getElementById('endMsg').textContent='The deadlines caught up with you. Another go?'; endLB.classList.add('hidden'); document.getElementById('nameEntry').classList.add('hidden'); const nb=document.getElementById('nextBtn'); nb.textContent='Retry level'; nb.dataset.mode='retry'; showScreen('endScreen'); }
+function loseGame(){ state.scene='end'; document.getElementById('endTitle').textContent='Out of lives'; document.getElementById('endScore').textContent='Score: '+state.score; document.getElementById('endMsg').textContent='The deadlines caught up with you. Back to Level 1.'; endLB.classList.add('hidden'); document.getElementById('nameEntry').classList.add('hidden'); const nb=document.getElementById('nextBtn'); nb.textContent='Restart from Level 1'; nb.dataset.mode='restart'; showScreen('endScreen'); }
 
 /* ---------- rendering ---------- */
 function draw(){
@@ -554,6 +575,14 @@ function _bbox(img){ const w=img.naturalWidth||img.width, h=img.naturalHeight||i
 function normFrame(key,img,idkey){ if(_normCache[key]!==undefined) return _normCache[key]||img; let std=_stdCache[idkey]; if(std===undefined){ const id=SPRITE_IMG[idkey]; if(!(id&&id.complete&&id.naturalWidth>0)) return img; const b=_bbox(id); _stdCache[idkey]=std=(b?{top:b.minY,bottom:b.maxY}:null); } if(!std) return img; const b=_bbox(img); if(!b){ _normCache[key]=null; return img; } const w=img.naturalWidth,h=img.naturalHeight; const out=document.createElement('canvas'); out.width=w; out.height=h; const o=out.getContext('2d'); o.imageSmoothingEnabled=false; o.drawImage(img,0,b.minY,w,(b.maxY-b.minY+1),0,std.top,w,(std.bottom-std.top+1)); _normCache[key]=out; return out; }
 function drawPlayer(){
   const p=player, d=p.def, x=ix(p)-rCamX, y=iy(p);
+  const emg=p.pipeT>0, rimTop=GROUND_Y*TILE-10;
+  if(emg){
+    const cx=x+p.w/2, pw=p.w+26;
+    ctx.fillStyle='#1f8a3b'; ctx.fillRect(cx-(pw-6)/2, rimTop+12, pw-6, 70);      /* pipe body */
+    ctx.fillStyle='#2bb24c'; ctx.fillRect(cx-pw/2, rimTop, pw, 14);                 /* rim lip */
+    ctx.fillStyle='rgba(255,255,255,0.28)'; ctx.fillRect(cx-pw/2+4, rimTop+2, 6, 10);
+    ctx.fillStyle='rgba(0,0,0,0.20)'; ctx.fillRect(cx+pw/2-10, rimTop+2, 6, 10);
+  }
   if(p.shield>0){ ctx.strokeStyle='rgba(43,184,163,0.8)'; ctx.lineWidth=3; ctx.beginPath(); ctx.arc(x+p.w/2,y+p.h/2,p.w,0,6.28); ctx.stroke(); }
   if(p.dashTime>0){ ctx.fillStyle='rgba(242,193,78,0.35)'; ctx.fillRect(x-p.facing*12,y+4,p.w,p.h-8); }
   let fr=d.id;
@@ -561,6 +590,7 @@ function drawPlayer(){
   else if(p.moving){ const seq=[0,1,2,3,2,1]; fr=d.id+'_'+seq[Math.floor(p.animDist/14)%seq.length]; }
   const spr=SPRITE_IMG[fr]||SPRITE_IMG[d.id];
   if(p.invuln>0 && Math.floor(p.invuln/4)%2===0) ctx.globalAlpha=0.45;
+  if(emg){ ctx.save(); ctx.beginPath(); ctx.rect(0,0,W,rimTop); ctx.clip(); }
   if(spr&&spr.complete&&spr.naturalWidth>0){
     const dh=Math.round(p.h*2.0), dw=Math.round(dh*0.75);
     const dx=Math.round(x+p.w/2-dw/2), dy=Math.round(y+p.h-dh);
@@ -569,6 +599,7 @@ function drawPlayer(){
     else ctx.drawImage(spr,0,0,spr.naturalWidth,spr.naturalHeight,dx,dy,dw,dh);
     ctx.imageSmoothingEnabled=true;
   } else { ctx.fillStyle=d.color; roundRect(x,y,p.w,p.h,5); ctx.fill(); }
+  if(emg){ ctx.restore(); }
   ctx.globalAlpha=1;
 }
 function drawHUD(L){
@@ -633,7 +664,7 @@ function openStart(idx,fresh){ if(fresh){ state.lives=3; state.totalScore=0; sta
 document.getElementById('goBtn').addEventListener('click',()=>{ hideAll(); startLevel(state.levelIndex); });
 document.getElementById('changeCharBtn').addEventListener('click',()=>{ state.scene='select'; showScreen('selectScreen'); });
 document.getElementById('menuBtn').addEventListener('click',()=>{ state.scene='select'; showScreen('selectScreen'); });
-document.getElementById('nextBtn').addEventListener('click',()=>{ const m=document.getElementById('nextBtn').dataset.mode; hideAll(); if(m==='next')openStart(state.levelIndex+1,false); else if(m==='retry'){ state.lives=3; openStart(state.levelIndex,false); } else { state.charIndex=0; openStart(0,true); } });
+document.getElementById('nextBtn').addEventListener('click',()=>{ const m=document.getElementById('nextBtn').dataset.mode; hideAll(); if(m==='next')openStart(state.levelIndex+1,false); else { openStart(0,true); } });
 document.getElementById('resumeBtn').addEventListener('click',()=>{ state.scene='play'; hideAll(); });
 document.getElementById('quitBtn').addEventListener('click',()=>{ state.scene='select'; showScreen('selectScreen'); });
 document.getElementById('lbOpenBtn').addEventListener('click',()=>{ renderLB(document.getElementById('lbList')); state.scene='lb'; showScreen('lbScreen'); });
